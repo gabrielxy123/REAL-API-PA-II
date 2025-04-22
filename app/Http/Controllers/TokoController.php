@@ -29,67 +29,63 @@ class TokoController extends Controller
         ], 200);
     }
 
-    public function approve($id){
+    public function approve($id)
+    {
         try {
             $toko = Toko::findOrFail($id);
 
-            //validasi status saat ini
-            if ($toko->status==='Diterima'){
+            // Validasi status
+            if ($toko->status === 'Diterima') {
                 return response()->json([
-                    'message' => 'Toko sudah dalam status diterima'
-                ],400);
+                    'success' => false,
+                    'message' => 'Toko sudah dalam status Diterima'
+                ], 400);
             }
 
+            // Update hanya status
             $toko->update([
                 'status' => 'Diterima'
             ]);
 
-            //kirim notifikasi kalo diperlukan
-            /*
-            return response->json([
-                'message' => 'Toko Berhasil Disetujui',
+            return response()->json([
+                'success' => true,
+                'message' => 'Toko berhasil disetujui',
                 'data' => $toko
             ], 200);
-            */
         } catch (\Exception $e) {
             return response()->json([
+                'success' => false,
                 'message' => 'Gagal menyetujui toko',
-                'error' => $e -> getMessage()
+                'error' => $e->getMessage()
             ], 500);
         }
     }
 
     // Reject toko
-    public function reject(Request $request, $id)
+    public function reject($id)
     {
-        $request->validate([
-            'alasan_penolakan' => 'required|string|max:255'
-        ]);
-        
         try {
             $toko = Toko::findOrFail($id);
-            
+
             if ($toko->status === 'Ditolak') {
                 return response()->json([
+                    'success' => false,
                     'message' => 'Toko sudah dalam status Ditolak'
                 ], 400);
             }
-            
+
+            // Update status saja tanpa menyimpan alasan
             $toko->update([
-                'status' => 'Ditolak',
-                'alasan_penolakan' => $request->alasan_penolakan,
-                'rejected_at' => now()
+                'status' => 'Ditolak'
             ]);
-            
-            // // Kirim notifikasi ke pemilik toko
-            
-            // return response()->json([
-            //     'message' => 'Toko berhasil ditolak',
-            //     'data' => $toko
-            // ], 200);
-            
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Toko berhasil ditolak'
+            ], 200);
         } catch (\Exception $e) {
             return response()->json([
+                'success' => false,
                 'message' => 'Gagal menolak toko',
                 'error' => $e->getMessage()
             ], 500);
@@ -143,7 +139,7 @@ class TokoController extends Controller
             'message' => 'Toko berhasil dibuat',
             'data' => $toko
         ], 201);
-    }   
+    }
 
     public function uploadBuktiPembayaran(Request $request)
     {

@@ -18,6 +18,7 @@ class Toko extends Model
         'provinsi',
         'waktuBuka',
         'waktuTutup',
+        'status',
     ];
 
     //relasi ke tabel user

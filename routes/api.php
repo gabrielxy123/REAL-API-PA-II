@@ -39,8 +39,13 @@ Route::middleware('auth:sanctum')->group(function () {
     //Route untuk mengupload bukti pembayaran
     Route::post('/upload-bukti-bayar', [TokoController::class, 'uploadBuktiPembayaran']);
 
+    //Route untuk approve dan reject
+    Route::put('/{id}/approve', [TokoController::class, 'approve']);
+    Route::put('/{id}/reject', [TokoController::class, 'reject']);
 
 
+    //Route untuk menampilkan detail toko milik user
+    Route::get("/toko-saya", [AkunUserController::class, 'getTokoByUser']);
 });
 
 // Test routes for Postman

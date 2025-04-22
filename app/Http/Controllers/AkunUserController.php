@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers;
 
-    use Illuminate\Http\Request;
-    use Illuminate\Support\Facades\Auth;
-    use Illuminate\Support\Facades\Storage;
-    use App\Models\User;
-    use Illuminate\Support\Facades\URL;
+use App\Models\Toko;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+use App\Models\User;
+use Illuminate\Support\Facades\URL;
 
 
 class   AkunUserController extends Controller
@@ -37,7 +38,7 @@ class   AkunUserController extends Controller
                     'noTelp' => $user->noTelp,
                     'profile_image' => $profileImage,
                 ],
-            ],200);
+            ], 200);
         } else {
             return response()->json([
                 'status' => 'error',
@@ -49,7 +50,7 @@ class   AkunUserController extends Controller
     public function updateProfile(Request $request)
     {
         $user = Auth::user();
-        
+
         if (!$user) {
             return response()->json([
                 'status' => 'error',
@@ -97,7 +98,7 @@ class   AkunUserController extends Controller
                 'user_id' => $user->id,
                 'error' => $e->getMessage()
             ]);
-            
+
             return response()->json([
                 'status' => 'error',
                 'message' => 'Failed to update profile: ' . $e->getMessage(),
@@ -108,7 +109,7 @@ class   AkunUserController extends Controller
     public function updateProfileImage(Request $request)
     {
         $user = Auth::user();
-        
+
         if (!$user) {
             return response()->json([
                 'status' => 'error',
@@ -164,7 +165,7 @@ class   AkunUserController extends Controller
                 'user_id' => $user->id,
                 'error' => $e->getMessage()
             ]);
-            
+
             return response()->json([
                 'status' => 'error',
                 'message' => 'Failed to update profile image: ' . $e->getMessage(),
@@ -176,7 +177,7 @@ class   AkunUserController extends Controller
     public function updateProfileImageUrl(Request $request)
     {
         $user = Auth::user();
-        
+
         if (!$user) {
             return response()->json([
                 'status' => 'error',
@@ -224,7 +225,7 @@ class   AkunUserController extends Controller
                 'user_id' => $user->id,
                 'error' => $e->getMessage()
             ]);
-            
+
             return response()->json([
                 'status' => 'error',
                 'message' => 'Failed to update profile image URL: ' . $e->getMessage(),
@@ -234,16 +235,52 @@ class   AkunUserController extends Controller
 
     public function saveImage($image, $path = 'public')
     {
-        if($image){
+        if ($image) {
             return null;
         }
 
-        $filename = time().'.png';
+        $filename = time() . '.png';
         //save image
         Storage::disk($path)->put($filename, base64_decode($image));
 
         //return URL
-        return URL::to('/').'/storage/'.$path.'/'.$filename;
+        return URL::to('/') . '/storage/' . $path . '/' . $filename;
+    }
+
+    public function getTokoByUser(Request $request)
+    {
+        try {
+            // Dapatkan user yang sedang login
+            $user = $request->user();
+
+            // Cari toko berdasarkan user_id
+            $toko = Toko::where('userID', $user->id)->first();
+
+            if (!$toko) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Toko tidak ditemukan untuk user ini'
+                ], 404);
+            }
+
+            // Periksa status toko
+            if ($toko->status !== 'Diterima') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Akses ditolak. Status toko Anda: ' . $toko->status
+                ], 403); // 403 Forbidden
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $toko
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil data toko',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 }
-
