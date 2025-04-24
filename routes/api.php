@@ -34,8 +34,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post("/store", [TokoController::class, 'store']);
     Route::post("/update-store", [TokoController::class, 'update']);
 
-    // Route untuk mendaftar toko
+    // ADMIN //
+
+    // Route untuk daftar toko
     Route::get("/index-toko", [TokoController::class, 'index']);
+    Route::get('/tokos/{id}/bukti-bayar', [TokoController::class, 'getBuktiBayar']);
+
+    //--------//
 
     //Route untuk mengupload bukti pembayaran
     Route::post('/upload-bukti-bayar', [TokoController::class, 'uploadBuktiPembayaran']);

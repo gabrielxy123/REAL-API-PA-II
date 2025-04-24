@@ -19,10 +19,20 @@ class Toko extends Model
         'waktuBuka',
         'waktuTutup',
         'status',
+        'buktiBayar'
     ];
 
     //relasi ke tabel user
     public function user() {
         return $this->belongsTo(User::class, 'userID');
+    }
+
+    //accessor untuk buktiBayar
+    public function getBuktiBayarAttribute($value){
+        if(!$value) return null;
+
+        return filter_var($value, FILTER_VALIDATE_URL)
+            ? $value
+            : url('storage/bukti_pembayaran/' . $value);
     }
 }

@@ -10,7 +10,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\URL;
 
 
-class   AkunUserController extends Controller
+class AkunUserController extends Controller
 {
     public function getUserProfile(Request $request)
     {
@@ -259,25 +259,32 @@ class   AkunUserController extends Controller
             if (!$toko) {
                 return response()->json([
                     'success' => false,
+                    'data' => ['status' => null], // Status null jika toko tidak ditemukan
                     'message' => 'Toko tidak ditemukan untuk user ini'
                 ], 404);
             }
 
             // Periksa status toko
-            if ($toko->status !== 'Diterima') {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Akses ditolak. Status toko Anda: ' . $toko->status
-                ], 403); // 403 Forbidden
-            }
-
             return response()->json([
-                'success' => true,
-                'data' => $toko
-            ], 200);
+                'success' => $toko->status === 'Diterima',
+                'data' => [
+                    'status' => $toko->status,
+                    'nama' => $toko->nama,
+                    'logo'=> $toko->logo,
+                    'jalan' => $toko->jalan,
+                    'waktuBuka' =>$toko->waktuBuka,
+                    'waktuTutup' =>$toko->waktuTutup,
+                    'noTelp' =>$toko->noTelp,
+                    'deskripsi' =>$toko->deskripsi,
+                ], // Selalu kirim status toko
+                'message' => $toko->status === 'Diterima'
+                    ? 'Toko berhasil ditemukan.'
+                    : 'Status toko Anda: ' . $toko->status
+            ], $toko->status === 'Diterima' ? 200 : 403);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
+                'data' => ['status' => null],
                 'message' => 'Gagal mengambil data toko',
                 'error' => $e->getMessage()
             ], 500);

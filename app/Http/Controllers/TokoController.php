@@ -20,6 +20,22 @@ class TokoController extends Controller
         ], 200);
     }
 
+    public function getBuktiBayar($id)
+    {
+        $toko = Toko::findOrFail($id);
+
+        if(!$toko->buktiBayar) {
+            return response()->json([
+                'messgae' => 'Bukti Bayar tidak ditemukan'
+            ], 404);
+        }
+
+        return response()->json([
+            'buktiBayar_url' => $toko->buktiBayar
+        ]);
+
+    }
+
     public function indexUser()
     {
         $tokos = Toko::where('status', 'Diterima')->get();
