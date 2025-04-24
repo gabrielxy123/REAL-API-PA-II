@@ -12,6 +12,7 @@ use App\Http\Controllers\UserController;
 Route::post("/register", [AuthController::class, 'register']);
 Route::post("/login", [AuthController::class, 'login']);
 Route::get("/index-toko-user", [TokoController::class, 'indexUser']);
+Route::get("/index-dashboard-user", [TokoController::class, 'indexUser']);
 
 // Protected routes requiring authentication
 Route::middleware('auth:sanctum')->group(function () {
