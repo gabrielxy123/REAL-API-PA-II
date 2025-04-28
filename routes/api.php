@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PersonController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AkunUserController;
+use App\Http\Controllers\ProdukController;
 use App\Http\Controllers\TokoController;
 use App\Http\Controllers\UserController;
 
@@ -30,7 +31,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Profile Image Upload Route
     Route::post('/upload-profile-image', [UserController::class, 'uploadProfileImage']);
 
-    // Route untuk mendaftar toko
+    // Route untuk mendaftar toko 
     Route::post("/store", [TokoController::class, 'store']);
     Route::post("/update-store", [TokoController::class, 'update']);
 
@@ -52,6 +53,10 @@ Route::middleware('auth:sanctum')->group(function () {
 
     //Route untuk menampilkan detail toko milik user
     Route::get("/toko-saya", [AkunUserController::class, 'getTokoByUser']);
+
+    //Route untuk CRUD Produk
+    Route::post("/tambah-produk", [ProdukController::class, 'store']);
+
 });
 
 // Test routes for Postman

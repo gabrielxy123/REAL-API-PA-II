@@ -55,7 +55,11 @@ class User extends Authenticatable
      * @return \Illuminate\Database\Eloquent\Relations\HasOne
      */
     public function tokos() {
-        return $this ->hasOne(Toko::class, 'userID'); 
+        return $this->hasOne(Toko::class, 'userID'); 
+    }
+
+    public function produks() {
+        return $this->hasMany(Produk::class, 'id');
     }
     
 }

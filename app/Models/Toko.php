@@ -27,6 +27,10 @@ class Toko extends Model
         return $this->belongsTo(User::class, 'userID');
     }
 
+    public function tokos() {
+        return $this->hasMany(Produk::class, 'id');
+    }
+
     //accessor untuk buktiBayar
     public function getBuktiBayarAttribute($value){
         if(!$value) return null;
