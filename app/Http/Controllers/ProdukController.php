@@ -11,7 +11,10 @@ class ProdukController extends Controller
     //
     public function index() {
         $produks =  Produk::all();
-        return response()->json($produks);
+        return response()->json([
+            'message' => 'Produk berhasil diambil',
+            'data' => $produks,
+        ], 200);
     }
 
     public function store(Request $request){

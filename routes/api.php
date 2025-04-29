@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PersonController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AkunUserController;
+use App\Http\Controllers\KategoriController;
 use App\Http\Controllers\ProdukController;
 use App\Http\Controllers\TokoController;
 use App\Http\Controllers\UserController;
@@ -56,6 +57,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     //Route untuk CRUD Produk
     Route::post("/tambah-produk", [ProdukController::class, 'store']);
+    Route::get("/kategoris", [KategoriController::class, 'index']);
+    Route::get("/produks", [ProdukController::class, 'index']);
 
 });
 
