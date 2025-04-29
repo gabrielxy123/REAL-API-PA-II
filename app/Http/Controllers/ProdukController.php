@@ -22,8 +22,8 @@ class ProdukController extends Controller
 
         $validated = $request->validate([
             'nama' => 'required|string|max:255',
-            'harga' => 'required|numeric',
-            'deskripsi' => 'nullable|string|max:255',
+            'harga' => 'nullable|numeric',
+            'id_kategori' => 'required|exists:kategoris,id'
         ]);
 
         $userId = Auth::id();
@@ -31,15 +31,25 @@ class ProdukController extends Controller
         //Menyimpan produk
         $produks = Produk::create([
             'nama' => $validated['nama'],
-            'harga' => $validated['harga'],
-            'deskripsi' => $validated['deskripsi'] ?? null,
+            'harga' => $validated['harga'] ?? null,
             'id_user' => $userId,
             'id_toko' => $userId,
+            'id_kategori' => $validated['id_kategori'],
         ]);
-
+        
         return response()->json([
             'message' => 'Produk berhasil dibuat',
-            'data' => $produks,
+            'data' => [
+                'id' => $produks->id,
+                'nama' => $produks->nama,
+                'harga' => $produks->harga,
+                'id_user' => $produks->id_user,
+                'id_toko' => $produks->id_toko,
+                'id_kategori' => $produks->id_kategori,
+                'kategori' => $produks->kategori->kategori, // Asumsi ada kolom 'nama' di tabel kategoris
+                'updated_at' => $produks->updated_at,
+                'created_at' => $produks->created_at,
+            ],
         ], 201);
     }
 }

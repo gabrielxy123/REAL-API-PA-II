@@ -9,9 +9,9 @@ class Produk extends Model
     protected $fillable = [
         'nama',
         'harga',
-        'deskripsi',
         'id_user',
         'id_toko',
+        'id_kategori',
     ];
 
     public function user() {
@@ -20,6 +20,10 @@ class Produk extends Model
 
     public function toko() {
         return $this->belongsTo(Toko::class, 'id_toko');
+    }
+
+    public function kategori() {
+        return $this->belongsTo(Kategori::class, 'id_kategori');
     }
 }
 

@@ -18,11 +18,13 @@ return new class extends Migration
             $table->text('deskripsi')->nullable();
             $table->unsignedBigInteger('id_user');
             $table->unsignedBigInteger('id_toko');
+            $table->unsignedBigInteger('id_kategori');
             $table->timestamps();
 
             //Foreign Key
             $table->foreign('id_user')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('id_toko')->references('id')->on('tokos')->onDelete('cascade');
+            $table->foreign('id_kategori')->references('id')->on('kategoris')->onDelete('cascade');
         });
     }
 
