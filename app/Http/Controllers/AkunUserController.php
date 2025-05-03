@@ -270,12 +270,12 @@ class AkunUserController extends Controller
                 'data' => [
                     'status' => $toko->status,
                     'nama' => $toko->nama,
-                    'logo'=> $toko->logo,
+                    'logo' => $toko->logo,
                     'jalan' => $toko->jalan,
-                    'waktuBuka' =>$toko->waktuBuka,
-                    'waktuTutup' =>$toko->waktuTutup,
-                    'noTelp' =>$toko->noTelp,
-                    'deskripsi' =>$toko->deskripsi,
+                    'waktuBuka' => $toko->waktuBuka,
+                    'waktuTutup' => $toko->waktuTutup,
+                    'noTelp' => $toko->noTelp,
+                    'deskripsi' => $toko->deskripsi,
                 ], // Selalu kirim status toko
                 'message' => $toko->status === 'Diterima'
                     ? 'Toko berhasil ditemukan.'
@@ -286,6 +286,46 @@ class AkunUserController extends Controller
                 'success' => false,
                 'data' => ['status' => null],
                 'message' => 'Gagal mengambil data toko',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function getTokoPublic($toko_id)
+    {
+        try {
+            // Cari toko berdasarkan toko_id
+            $toko = Toko::find($toko_id);
+
+            if (!$toko) {
+                return response()->json([
+                    'success' => false,
+                    'data' => ['status' => null],
+                    'message' => 'Toko tidak ditemukan dengan ID ini'
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => $toko->status === 'Diterima',
+                'data' => [
+                    'status' => $toko->status,
+                    'nama' => $toko->nama,
+                    'logo' => $toko->logo,
+                    'jalan' => $toko->jalan,
+                    'waktuBuka' => $toko->waktuBuka,
+                    'waktuTutup' => $toko->waktuTutup,
+                    'noTelp' => $toko->noTelp,
+                    'deskripsi' => $toko->deskripsi,
+                ],
+                'message' => $toko->status === 'Diterima'
+                    ? 'Detail toko berhasil ditemukan.'
+                    : 'Status toko: ' . $toko->status
+            ], $toko->status === 'Diterima' ? 200 : 403);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'data' => ['status' => null],
+                'message' => 'Gagal mengambil detail toko',
                 'error' => $e->getMessage()
             ], 500);
         }

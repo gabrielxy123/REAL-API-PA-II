@@ -15,6 +15,9 @@ Route::post("/register", [AuthController::class, 'register']);
 Route::post("/login", [AuthController::class, 'login']);
 Route::get("/index-toko-user", [TokoController::class, 'indexUser']);
 Route::get("/index-dashboard-user", [TokoController::class, 'indexUser']);
+Route::get("/detail-toko-user/{id_toko}", [AkunUserController::class, 'getTokoPublic']);
+Route::get("/produks-user/{id_toko}", [ProdukController::class, 'getProdukByToko']);
+
 
 // Protected routes requiring authentication
 Route::middleware('auth:sanctum')->group(function () {
@@ -23,7 +26,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/update-profile', [AkunUserController::class, 'updateProfile']);
     Route::post('/update-profile-image', [AkunUserController::class, 'updateProfileImage']);
     Route::post('/update-profile-image-url', [AkunUserController::class, 'updateProfileImageUrl']);
-    
+
     // Default user route
     Route::get('/user', function (Request $request) {
         return $request->user();
@@ -59,10 +62,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post("/tambah-produk", [ProdukController::class, 'store']);
     Route::get("/kategoris", [KategoriController::class, 'index']);
     Route::get("/produks", [ProdukController::class, 'index']);
-
 });
 
 // Test routes for Postman
 Route::get("/index", [AuthController::class, 'index']);
 Route::get("/show/{id}", [AuthController::class, 'show']);
-

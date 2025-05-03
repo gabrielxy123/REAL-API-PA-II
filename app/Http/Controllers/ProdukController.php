@@ -35,6 +35,35 @@ class ProdukController extends Controller
         ]);
     }
 
+    public function getProdukByToko($toko_id)
+    {
+        try {
+            // Cek apakah toko ada
+            $toko = Toko::find($toko_id);
+
+            if (!$toko) {
+                return response()->json([
+                    'message' => 'Toko tidak ditemukan',
+                    'data' => []
+                ], 404);
+            }
+
+            // Ambil semua produk yang sesuai dengan toko pengguna
+            $produks = Produk::where('id_toko', $toko->id)->get();
+
+            return response()->json([
+                'message' => 'Produk berhasil diambil',
+                'data' => $produks,
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Gagal mengambil produk',
+                'data' => [],
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
 
     public function store(Request $request)
     {
@@ -69,7 +98,7 @@ class ProdukController extends Controller
         ]);
 
         return response()->json([
-            'message' => 'Produk berhasil dibuat',  
+            'message' => 'Produk berhasil dibuat',
             'data' => [
                 'id' => $produks->id,
                 'nama' => $produks->nama,
