@@ -221,6 +221,7 @@ class TokoController extends Controller
 
             // Update URL bukti bayar di database
             $toko->buktiBayar = url('/storage/bukti_pembayaran/' . $filename);
+            $toko->status = 'Menunggu';
             $toko->save();
 
             return response()->json([
