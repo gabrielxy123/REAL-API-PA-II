@@ -14,4 +14,12 @@ class KategoriController extends Controller
             'data' => $kategori,
         ], 200);
     }
+
+    public function indexToOrder() {
+        $kategori = Kategori::all();
+        return response()->json([
+            'message'=>'Kategori berhasil diambil',
+            'data' => $kategori,
+        ], 200);
+    }
 }

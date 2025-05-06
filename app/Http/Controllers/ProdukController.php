@@ -112,4 +112,34 @@ class ProdukController extends Controller
             ],
         ], 201);
     }
+
+    public function getProdukToOrder($toko_id)
+    {
+        try {
+            // Cek apakah toko ada
+            $toko = Toko::find($toko_id);
+
+            if (!$toko) {
+                return response()->json([
+                    'message' => 'Toko tidak ditemukan',
+                    'data' => []
+                ], 404);
+            }
+
+            // Ambil semua produk yang sesuai dengan toko pengguna
+            $produks = Produk::where('id_toko', $toko->id)->get();
+
+            return response()->json([
+                'message' => 'Produk berhasil diambil',
+                'data' => $produks,
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Gagal mengambil produk',
+                'data' => [],
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
 }

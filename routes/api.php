@@ -17,6 +17,8 @@ Route::get("/index-toko-user", [TokoController::class, 'indexUser']);
 Route::get("/index-dashboard-user", [TokoController::class, 'indexUser']);
 Route::get("/detail-toko-user/{id_toko}", [AkunUserController::class, 'getTokoPublic']);
 Route::get("/produks-user/{id_toko}", [ProdukController::class, 'getProdukByToko']);
+Route::get("/order-kategoris", [KategoriController::class, 'indexToOrder']);
+Route::get("/order-produks/{id_toko}", [ProdukController::class, 'getProdukToOrder']);
 
 
 // Protected routes requiring authentication
