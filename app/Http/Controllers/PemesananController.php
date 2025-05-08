@@ -77,6 +77,7 @@ class PemesananController extends Controller
                     'nama_produk' => $produk->nama,
                     'harga' => $produk->harga,
                     'kategori' => $produk->kategori->kategori,
+                    'catatan' => $request->catatan
                 ]);
 
                 $pesananList[] = $pesanan;

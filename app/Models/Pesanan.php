@@ -11,7 +11,7 @@ class Pesanan extends Model
 
     protected $table = 'pesanan';
 
-    protected $fillable = ['id_produk', 'id_user', 'id_toko', 'nama_produk', 'kategori', 'status'];
+    protected $fillable = ['id_produk', 'id_user', 'id_toko', 'nama_produk', 'kategori', 'status', 'catatan', 'harga', 'quantity', 'subtotal'];
 
     public function produk()
     {

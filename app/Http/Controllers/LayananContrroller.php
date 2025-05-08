@@ -80,4 +80,34 @@ class LayananContrroller extends Controller
             ],
         ], 201);
     }
+
+    public function getLayananToOrder($toko_id)
+    {
+        try {
+            // Cek apakah toko ada
+            $toko = Toko::find($toko_id);
+
+            if (!$toko) {
+                return response()->json([
+                    'message' => 'Toko tidak ditemukan',
+                    'data' => []
+                ], 404);
+            }
+
+            // Ambil semua produk yang sesuai dengan toko pengguna
+            $layanan = Layanan::where('id_toko', $toko->id)->get();
+
+            return response()->json([
+                'message' => 'Layanan berhasil diambil',
+                'data' => $layanan,
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Gagal mengambil produk',
+                'data' => [],
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
 }

@@ -21,6 +21,8 @@ return new class extends Migration
             $table->string('kategori');
             $table->enum('status', ['Menunggu', 'Diproses', 'Selesai', 'Ditolak'])
             ->default('Menunggu');
+            $table->text('catatan')->nullable();
+            $table->timestamps();
         });
         
     }

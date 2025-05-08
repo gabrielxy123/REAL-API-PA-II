@@ -12,6 +12,8 @@ use App\Http\Controllers\ProdukController;
 use App\Http\Controllers\TokoController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\PemesananController;
+use App\Http\Controllers\TransaksiController;
+use App\Models\Layanan;
 
 // User authentication routes
 Route::post("/register", [AuthController::class, 'register']);
@@ -22,6 +24,7 @@ Route::get("/detail-toko-user/{id_toko}", [AkunUserController::class, 'getTokoPu
 Route::get("/produks-user/{id_toko}", [ProdukController::class, 'getProdukByToko']);
 Route::get("/order-kategoris", [KategoriController::class, 'indexToOrder']);
 Route::get("/order-produks/{id_toko}", [ProdukController::class, 'getProdukToOrder']);
+Route::get("/layanan-produks/{id_toko}", [LayananContrroller::class, 'getLayananToOrder']);
 
 
 // Protected routes requiring authentication
@@ -70,6 +73,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     //Pemesanan
     Route::post("/pesanan/{id}", [PemesananController::class, 'store']);
+
+    //Tes Transaksi
+    Route::post("/transaksi", [TransaksiController::class, 'store']);
 
     //Nota
     Route::get("/nota", [NotaController::class, 'indexNota']);
