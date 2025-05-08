@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\NotaController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PersonController;
@@ -9,6 +10,7 @@ use App\Http\Controllers\KategoriController;
 use App\Http\Controllers\ProdukController;
 use App\Http\Controllers\TokoController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\PemesananController;
 
 // User authentication routes
 Route::post("/register", [AuthController::class, 'register']);
@@ -64,8 +66,20 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post("/tambah-produk", [ProdukController::class, 'store']);
     Route::get("/kategoris", [KategoriController::class, 'index']);
     Route::get("/produks", [ProdukController::class, 'index']);
+
+    //Pemesanan
+    Route::post("/pesanan/{id}", [PemesananController::class, 'store']);
+
+    //Nota
+    Route::get("/nota", [NotaController::class, 'indexNota']);
+    Route::get("/nota/{id}", [NotaController::class, 'detailNota']);
+
+
+
+
 });
 
 // Test routes for Postman
+Route::get("/produk_toko/{id}", [PemesananController::class, 'produkToko']);
 Route::get("/index", [AuthController::class, 'index']);
 Route::get("/show/{id}", [AuthController::class, 'show']);
