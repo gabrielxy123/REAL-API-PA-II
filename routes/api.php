@@ -7,6 +7,7 @@ use App\Http\Controllers\PersonController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AkunUserController;
 use App\Http\Controllers\KategoriController;
+use App\Http\Controllers\LayananContrroller;
 use App\Http\Controllers\ProdukController;
 use App\Http\Controllers\TokoController;
 use App\Http\Controllers\UserController;
@@ -74,8 +75,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get("/nota", [NotaController::class, 'indexNota']);
     Route::get("/nota/{id}", [NotaController::class, 'detailNota']);
 
-
-
+    //Route layanan tambahan
+    Route::post("/tambah-layanan", [LayananContrroller::class, 'store']);
+    Route::get("/layanan", [LayananContrroller::class, 'index']);
 
 });
 

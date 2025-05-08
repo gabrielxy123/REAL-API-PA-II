@@ -1,0 +1,83 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Layanan;
+use App\Models\Toko;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+
+class LayananContrroller extends Controller
+{   
+
+    public function index()
+    {
+        // Dapatkan pengguna yang sedang login
+        $userId = Auth::id();
+
+        // Ambil toko yang dimiliki oleh pengguna
+        $toko = Toko::where('userID', $userId)->first();
+
+        // Jika pengguna tidak memiliki toko, kembalikan respons error
+        if (!$toko) {
+            return response()->json([
+                'message' => 'Pengguna ini tidak memiliki toko.',
+                'data' => []
+            ], 404);
+        }
+
+        // Ambil semua produk yang sesuai dengan toko pengguna
+        $produks = Layanan::where('id_toko', $toko->id)->get();
+
+        return response()->json([
+            'message' => 'Produk berhasil diambil',
+            'data' => $produks,
+        ]);
+    }
+
+
+
+    public function store(Request $request)
+    {
+        //memastikan user login
+        if (!Auth::check()) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
+        $validated = $request->validate([
+            'nama' => 'required|string|max:255',
+            'harga' => 'nullable|numeric',
+        ]);
+
+        $userId = Auth::id();
+
+        // Dapatkan toko milik pengguna
+        $toko = Toko::where('userID', $userId)->first();
+
+        // Jika pengguna tidak memiliki toko, kembalikan error
+        if (!$toko) {
+            return response()->json(['message' => 'Pengguna ini tidak memiliki toko.'], 404);
+        }
+
+        //Menyimpan produk
+        $produks = Layanan::create([
+            'nama' => $validated['nama'],
+            'harga' => $validated['harga'] ?? null,
+            'id_user' => $userId,
+            'id_toko' => $toko->id,
+        ]);
+
+        return response()->json([
+            'message' => 'Produk berhasil dibuat',
+            'data' => [
+                'id' => $produks->id,
+                'nama' => $produks->nama,
+                'harga' => $produks->harga,
+                'id_user' => $produks->id_user,
+                'id_toko' => $produks->id_toko,
+                'updated_at' => $produks->updated_at,
+                'created_at' => $produks->created_at,
+            ],
+        ], 201);
+    }
+}

@@ -1,0 +1,23 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+class Layanan extends Model
+{
+    protected $fillable = [
+        'nama',
+        'harga',
+        'id_user',
+        'id_toko',
+    ];
+
+    public function user() {
+        return $this->belongsTo(User::class, 'id_user');
+    }
+
+    public function toko() {
+        return $this->belongsTo(Toko::class, 'id_toko');
+    }
+}
