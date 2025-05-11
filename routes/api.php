@@ -73,13 +73,17 @@ Route::middleware('auth:sanctum')->group(function () {
 
     //Pemesanan
     Route::post("/pesanan/{id}", [PemesananController::class, 'store']);
+    
+
 
     //Tes Transaksi
     Route::post("/transaksi", [TransaksiController::class, 'store']);
+    Route::get('/transaksi/riwayat', [TransaksiController::class, 'riwayatTransaksi']);
 
     //Nota
     Route::get("/nota", [NotaController::class, 'indexNota']);
     Route::get("/nota/{id}", [NotaController::class, 'detailNota']);
+    
 
     //Route layanan tambahan
     Route::post("/tambah-layanan", [LayananContrroller::class, 'store']);

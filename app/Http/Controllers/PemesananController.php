@@ -57,6 +57,7 @@ class PemesananController extends Controller
             $request->validate([
                 'id_produk' => 'required|array',
                 'id_produk.*' => 'exists:produks,id',
+                'layanan_tambahan' => 'nullable|exists:layanans,id',
             ]);
 
             $pesananList = [];
@@ -77,7 +78,8 @@ class PemesananController extends Controller
                     'nama_produk' => $produk->nama,
                     'harga' => $produk->harga,
                     'kategori' => $produk->kategori->kategori,
-                    'catatan' => $request->catatan
+                    'catatan' => $request->catatan,
+                    'layanan_tambahan' => $request->layanan_tambahan,
                 ]);
 
                 $pesananList[] = $pesanan;

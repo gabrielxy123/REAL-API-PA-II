@@ -13,11 +13,22 @@ class Layanan extends Model
         'id_toko',
     ];
 
-    public function user() {
+    public function user()
+    {
         return $this->belongsTo(User::class, 'id_user');
     }
 
-    public function toko() {
+    public function toko()
+    {
         return $this->belongsTo(Toko::class, 'id_toko');
+    }
+
+    public function pesanans()
+    {
+        return $this->hasMany(Pesanan::class, 'layanan_tambahan');
+    }
+    public function pesanan()
+    {
+        return $this->belongsToMany(Pesanan::class, 'pesanan_layanan_tambahan', 'id_layanan', 'id_pesanan');
     }
 }
