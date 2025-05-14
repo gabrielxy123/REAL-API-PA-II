@@ -7,8 +7,10 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PersonController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AkunUserController;
+use App\Http\Controllers\FcmTokenController;
 use App\Http\Controllers\KategoriController;
 use App\Http\Controllers\LayananContrroller;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProdukController;
 use App\Http\Controllers\TokoController;
 use App\Http\Controllers\UserController;
@@ -26,6 +28,8 @@ Route::get("/produks-user/{id_toko}", [ProdukController::class, 'getProdukByToko
 Route::get("/order-kategoris", [KategoriController::class, 'indexToOrder']);
 Route::get("/order-produks/{id_toko}", [ProdukController::class, 'getProdukToOrder']);
 Route::get("/layanan-produks/{id_toko}", [LayananContrroller::class, 'getLayananToOrder']);
+Route::get("/layanan-user/{id_toko}", [LayananContrroller::class, 'getLayananToToko']);
+
 
 
 // Protected routes requiring authentication
@@ -74,8 +78,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     //Pemesanan
     Route::post("/pesanan/{id}", [PemesananController::class, 'store']);
-    
 
+    //Notifikasi
+    
 
     //Tes Transaksi
     Route::post("/transaksi", [TransaksiController::class, 'store']);
@@ -94,10 +99,17 @@ Route::middleware('auth:sanctum')->group(function () {
 
     
 
-    //Route layanan tambahan
+    //Route layanan tambahana
     Route::post("/tambah-layanan", [LayananContrroller::class, 'store']);
     Route::get("/layanan", [LayananContrroller::class, 'index']);
 
+
+    //Notifikasi
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
+    Route::get('/notifications/unread-count', [NotificationController::class, 'getUnreadCount']);
+    Route::delete('/notifications/{id}', [NotificationController::class, 'delete']);
 });
 
 // Test routes for Postman

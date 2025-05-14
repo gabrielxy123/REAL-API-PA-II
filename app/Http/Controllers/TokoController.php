@@ -2,12 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Notifikasi;
 use App\Models\Toko;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
+use Kreait\Firebase\Factory;
+use Kreait\Firebase\Messaging\CloudMessage;
+use Kreait\Firebase\Messaging\Notification;
 
 class TokoController extends Controller
 {
@@ -24,7 +30,7 @@ class TokoController extends Controller
     {
         $toko = Toko::findOrFail($id);
 
-        if(!$toko->buktiBayar) {
+        if (!$toko->buktiBayar) {
             return response()->json([
                 'messgae' => 'Bukti Bayar tidak ditemukan'
             ], 404);
@@ -33,7 +39,6 @@ class TokoController extends Controller
         return response()->json([
             'buktiBayar_url' => $toko->buktiBayar
         ]);
-
     }
 
     public function indexUser()
@@ -62,6 +67,19 @@ class TokoController extends Controller
             $toko->update([
                 'status' => 'Diterima'
             ]);
+
+            // Ambil user yang mendaftar toko
+            $user = $toko->user; // Pastikan relasi 'user' sudah didefinisikan di model Toko
+            $fcmToken = $user->fcm_token;
+
+            // Kirim notifikasi jika FCM token tersedia
+            if ($fcmToken) {
+                $this->sendNotification(
+                    $fcmToken,
+                    'Toko Disetujui',
+                    'Selamat! Toko Anda telah disetujui oleh admin.'
+                );
+            }
 
             return response()->json([
                 'success' => true,
@@ -95,6 +113,19 @@ class TokoController extends Controller
                 'status' => 'Ditolak'
             ]);
 
+            // Ambil user yang mendaftar toko
+            $user = $toko->user; // Pastikan relasi 'user' sudah didefinisikan di model Toko
+            $fcmToken = $user->fcm_token;
+
+            // Kirim notifikasi jika FCM token tersedia
+            if ($fcmToken) {
+                $this->sendNotification(
+                    $fcmToken,
+                    'Toko Ditolak',
+                    'Maaf, Permintaan Pendaftaran Toko Anda ditolak oleh admin.'
+                );
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => 'Toko berhasil ditolak'
@@ -110,11 +141,7 @@ class TokoController extends Controller
 
     public function store(Request $request)
     {
-        // Pastikan user login
-        if (!Auth::check()) {
-            return response()->json(['message' => 'Unauthorized'], 401);
-        }
-
+        // Validasi data
         $validated = $request->validate([
             'nama' => 'required|string|max:255',
             'noTelp' => 'required|string|regex:/^[0-9]{10,15}$/',
@@ -136,7 +163,7 @@ class TokoController extends Controller
             ], 422);
         }
 
-        // Menyimpan data toko
+        // Simpan data toko
         $toko = Toko::create([
             'userID' => $userId,
             'nama' => $validated['nama'],
@@ -155,6 +182,73 @@ class TokoController extends Controller
             'message' => 'Toko berhasil dibuat',
             'data' => $toko
         ], 201);
+    }
+
+    public function sendNotification($token, $title, $body, $data = [])
+    {
+        try {
+            $messaging = app('firebase.messaging');
+
+            // Configure high priority for Android
+            $androidConfig = [
+                'priority' => 'high',
+                'ttl' => '60s',
+                'notification' => [
+                    'channel_id' => 'high_importance_channel',
+                ]
+            ];
+
+            // Configure high priority for iOS (APNS)
+            $apnsConfig = [
+                'headers' => [
+                    'apns-priority' => '10',
+                    'apns-push-type' => 'alert'
+                ],
+                'payload' => [
+                    'aps' => [
+                        'content-available' => 1,
+                    ],
+                ],
+            ];
+
+            // Create the message with high priority configuration
+            $message = CloudMessage::withTarget('token', $token)
+                ->withNotification(Notification::create($title, $body))
+                ->withData($data)
+                ->withAndroidConfig($androidConfig)
+                ->withApnsConfig($apnsConfig);
+
+            $response = $messaging->send($message);
+
+            // Also save to database for history
+            // Find user by FCM token
+            $user = User::where('fcm_token', $token)->first();
+
+            if ($user) {
+                Notifikasi::create([
+                    'user_id' => $user->id,
+                    'title' => $title,
+                    'body' => $body,
+                    'data' => $data,
+                    'is_read' => false
+                ]);
+            }
+
+            \Log::info('FCM Success:', [
+                'token' => $token,
+                'time_sent' => now()->toDateTimeString(),
+                'message_id' => $response,
+            ]);
+
+            return true;
+        } catch (\Exception $e) {
+            \Log::error('FCM Error:', [
+                'token' => $token,
+                'error' => $e->getMessage(),
+                'time' => now()->toDateTimeString(),
+            ]);
+            return false;
+        }
     }
 
     public function uploadBuktiPembayaran(Request $request)
@@ -224,13 +318,42 @@ class TokoController extends Controller
             $toko->status = 'Menunggu';
             $toko->save();
 
+            // Ambil FCM token dari admin
+            $adminTokens = User::where('role', 'admin')
+                ->whereNotNull('fcm_token')
+                ->pluck('fcm_token')
+                ->toArray();
+
+            // In uploadBuktiPembayaran method
+            if (!empty($adminTokens)) {
+                $notificationTitle = 'Pendaftaran Toko Baru';
+                $notificationBody = 'Toko baru telah terdaftar dengan nama: ' . $toko->nama;
+
+                // Additional data that might be useful for the app
+                $data = [
+                    'event_type' => 'new_store_registration',
+                    'store_id' => $toko->id,
+                    'store_name' => $toko->nama,
+                    'timestamp' => now()->timestamp
+                ];
+
+                // Send to each admin token
+                foreach ($adminTokens as $token) {
+                    $this->sendNotification(
+                        $token,
+                        $notificationTitle,
+                        $notificationBody,
+                        $data
+                    );
+                }
+            }
             return response()->json([
                 'status' => 'success',
                 'image_url' => $toko->buktiBayar,
                 'message' => 'Bukti pembayaran uploaded successfully'
             ]);
         } catch (\Exception $e) {
-            \Log::error('Error uploading bukti pembayaran: ' . $e->getMessage());
+            Log::error('Error uploading bukti pembayaran: ' . $e->getMessage());
             return response()->json([
                 'status' => 'error',
                 'message' => 'An error occurred: ' . $e->getMessage()

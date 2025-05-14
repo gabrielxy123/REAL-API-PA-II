@@ -49,11 +49,13 @@ class AuthController extends Controller
                 'regex:/^[a-zA-Z\s\-\'\.]+$/', // Hanya huruf, spasi, tanda hubung, petik, dan titik
             ],
             'password' => 'required|min:6',
+            'fcm_token' => 'nullable'
         ])->validate();
 
         // Ambil input
         $name = $request->input('name');
         $password = $request->input('password');
+        $fcmTokenFromRequest = $request->input('fcm_token');
 
         // Verifikasi kredensial menggunakan web guard
         if (!Auth::guard('web')->attempt(['name' => $name, 'password' => $password])) {
@@ -65,7 +67,22 @@ class AuthController extends Controller
         // Ambil user dan buat token
         $user = User::where('name', $name)->first();
 
-        // Process profile image URL
+        // Perbarui fcm_token user jika berbeda atau jika fcm_token baru diberikan
+        if (!empty($fcmTokenFromRequest)) {
+            if ($user->fcm_token !== $fcmTokenFromRequest) {
+                $user->fcm_token = $fcmTokenFromRequest;
+                $user->save();
+            }
+        } else {
+            // Jika tidak ada fcm_token dari request, dan user punya token lama, hapus.
+            // Ini berguna jika Flutter suatu saat tidak mengirim fcm_token.
+            if ($user->fcm_token !== null) {
+                $user->fcm_token = null;
+                $user->save();
+            }
+        }
+
+        // Process profile image URL - moved outside the isDirty condition
         $profileImage = $user->profile_image;
         if ($profileImage) {
             // If it's not already a complete URL, generate the full URL
@@ -82,16 +99,15 @@ class AuthController extends Controller
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
-        // Return user and token with role info
+        // Return user and token with role info - always return this regardless of FCM token changes
         return response()->json([
             'user' => $userData,
             'role' => $user->role, // Sertakan role dalam respons
             'token' => $token,
+            'fcm_token' => $user->fcm_token,
             'message' => 'Login berhasil',
         ], 200);
     }
-
-
 
     public function index()
     {

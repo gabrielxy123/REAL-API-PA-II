@@ -23,6 +23,7 @@ class User extends Authenticatable
         'password',
         'noTelp',
         'profile_image',
+        'fcm_token'
     ];
 
     /**
