@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\NotaController;
+use App\Http\Controllers\NotaPengusahaController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PersonController;
@@ -83,6 +84,14 @@ Route::middleware('auth:sanctum')->group(function () {
     //Nota
     Route::get("/nota", [NotaController::class, 'indexNota']);
     Route::get("/nota/{id}", [NotaController::class, 'detailNota']);
+
+    Route::get('/pengusaha/transaksi', [NotaPengusahaController::class, 'index']);
+    Route::get('/pengusaha/transaksi/{kodeTransaksi}', [NotaPengusahaController::class, 'detail']);
+    Route::post('/pengusaha/transaksi/{kodeTransaksi}/proses', [NotaPengusahaController::class, 'prosesPesanan']);
+    Route::post('/pengusaha/transaksi/{kodeTransaksi}/update-kiloan', [NotaPengusahaController::class, 'updatePesananKiloan']);
+    Route::post('/pengusaha/transaksi/{kodeTransaksi}/tolak', [NotaPengusahaController::class, 'tolakPesanan']);
+
+
     
 
     //Route layanan tambahan

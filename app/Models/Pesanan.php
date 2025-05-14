@@ -23,7 +23,8 @@ class Pesanan extends Model
         'quantity',
         'subtotal',
         'kode_transaksi',
-        'layanan_tambahan'
+        'layanan_tambahan',
+        'id_pesanan_kiloan'
     ];
 
     public function produk()
@@ -47,8 +48,12 @@ class Pesanan extends Model
     }
 
     public function layananTambahan()
-{
-    return $this->belongsToMany(Layanan::class, 'pesanan_layanan_tambahan', 'id_pesanan', 'id_layanan');
-}
+    {
+        return $this->belongsToMany(Layanan::class, 'pesanan_layanan_tambahan', 'id_pesanan', 'id_layanan');
+    }
 
+    public function pesananKiloan()
+    {
+        return $this->belongsTo(PesananKiloan::class, 'id_pesanan_kiloan');
+    }
 }

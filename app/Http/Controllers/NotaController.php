@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Pesanan;
+use App\Models\PesananKiloan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Toko;
@@ -32,14 +33,35 @@ class NotaController extends Controller
         $result = $groupedPesanan->map(function ($group) use ($userId) {
             $items = Pesanan::where('kode_transaksi', $group->kode_transaksi)
                 ->where('id_user', $userId)
+                ->with(['layananTambahan', 'pesananKiloan'])
                 ->get();
+
+            // Total produk
+            $totalProduk = $items->sum('subtotal');
+
+            // Total layanan tambahan
+            $layananTambahan = $items->first()?->layananTambahan ?? collect();
+            $totalLayanan = $layananTambahan->sum('harga');
+
+            // Total kiloan
+            $totalKiloan = 0;
+            $firstPesanan = $items->first();
+
+            if ($firstPesanan && $firstPesanan->id_pesanan_kiloan) {
+                $kiloan = $firstPesanan->pesananKiloan;
+                if ($kiloan && $kiloan->jumlah_kiloan && $kiloan->harga_kiloan) {
+                    $totalKiloan = $kiloan->jumlah_kiloan * $kiloan->harga_kiloan;
+                }
+            }
+
+            $grandTotal = $totalProduk + $totalLayanan + $totalKiloan;
 
             return [
                 'kode_transaksi' => $group->kode_transaksi,
                 'nama_toko' => $group->toko->nama ?? 'Tidak diketahui',
                 'tanggal' => \Carbon\Carbon::parse($group->tanggal)->format('d-m-Y H:i'),
                 'jumlah_item' => $items->sum('quantity'),
-                'total_harga' => $items->sum('subtotal'),
+                'total_harga' => $grandTotal,
                 'status' => $group->status ?? 'Menunggu'
             ];
         });
@@ -73,6 +95,34 @@ class NotaController extends Controller
         $totalLayanan = $layananTambahan->sum('harga');
         $grandTotal = $totalProduk + $totalLayanan;
 
+        // Cek apakah ini pesanan kiloan
+        $pesananKiloanData = null;
+        $totalKiloan = 0;
+
+        if ($first->id_pesanan_kiloan) {
+            $pesananKiloan = PesananKiloan::with('details')->find($first->id_pesanan_kiloan);
+
+            if ($pesananKiloan) {
+                if ($pesananKiloan->jumlah_kiloan !== null && $pesananKiloan->harga_kiloan !== null) {
+                    $totalKiloan = $pesananKiloan->jumlah_kiloan * $pesananKiloan->harga_kiloan;
+                    $grandTotal += $totalKiloan;
+                }
+
+                $pesananKiloanData = [
+                    'jumlah_kiloan' => $pesananKiloan->jumlah_kiloan,
+                    'harga_kiloan' => $pesananKiloan->harga_kiloan,
+                    'total_kiloan' => $totalKiloan,
+                    'details' => $pesananKiloan->details->map(function ($detail) {
+                        return [
+                            'id_produk' => $detail->id_produk,
+                            'nama_barang' => $detail->nama_barang,
+                            'quantity' => $detail->quantity,
+                        ];
+                    }),
+                ];
+            }
+        }
+
         return response()->json([
             'message' => 'Nota berhasil diambil',
             'data' => [
@@ -87,7 +137,8 @@ class NotaController extends Controller
                         'produk' => $item->nama_produk,
                         'harga' => $item->harga,
                         'quantity' => $item->quantity,
-                        'subtotal' => $item->subtotal
+                        'subtotal' => $item->subtotal,
+                        'status' => $item->status
                     ];
                 }),
                 'layanan_tambahan' => $layananTambahan->map(function ($layanan) {
@@ -96,9 +147,11 @@ class NotaController extends Controller
                         'harga' => $layanan->harga
                     ];
                 }),
+                'pesanan_kiloan' => $pesananKiloanData,
                 'total_produk' => $totalProduk,
                 'total_layanan' => $totalLayanan,
-                'grand_total' => $grandTotal
+                'total_kiloan' => $totalKiloan,
+                'grand_total' => $grandTotal,
             ]
         ]);
     }

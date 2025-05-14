@@ -31,4 +31,8 @@ class Layanan extends Model
     {
         return $this->belongsToMany(Pesanan::class, 'pesanan_layanan_tambahan', 'id_layanan', 'id_pesanan');
     }
+    public function pesananKiloan()
+    {
+        return $this->belongsTo(PesananKiloan::class, 'id_pesanan_kiloan');
+    }
 }
