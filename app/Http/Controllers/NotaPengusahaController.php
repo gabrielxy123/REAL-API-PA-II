@@ -2,13 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Notifikasi;
 use App\Models\Pesanan;
 use App\Models\PesananKiloan;
 use App\Models\Toko;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Kreait\Firebase\Messaging\CloudMessage;
+use Kreait\Firebase\Messaging\Notification;
 
 class NotaPengusahaController extends Controller
 {
@@ -183,6 +187,73 @@ class NotaPengusahaController extends Controller
         ]);
     }
 
+    public function sendNotification($token, $title, $body, $data = [])
+    {
+        try {
+            $messaging = app('firebase.messaging');
+
+            // Configure high priority for Android
+            $androidConfig = [
+                'priority' => 'high',
+                'ttl' => '60s',
+                'notification' => [
+                    'channel_id' => 'high_importance_channel',
+                ]
+            ];
+
+            // Configure high priority for iOS (APNS)
+            $apnsConfig = [
+                'headers' => [
+                    'apns-priority' => '10',
+                    'apns-push-type' => 'alert'
+                ],
+                'payload' => [
+                    'aps' => [
+                        'content-available' => 1,
+                    ],
+                ],
+            ];
+
+            // Create the message with high priority configuration
+            $message = CloudMessage::withTarget('token', $token)
+                ->withNotification(Notification::create($title, $body))
+                ->withData($data)
+                ->withAndroidConfig($androidConfig)
+                ->withApnsConfig($apnsConfig);
+
+            $response = $messaging->send($message);
+
+            // Also save to database for history
+            // Find user by FCM token
+            $user = User::where('fcm_token', $token)->first();
+
+            if ($user) {
+                Notifikasi::create([
+                    'user_id' => $user->id,
+                    'title' => $title,
+                    'body' => $body,
+                    'data' => $data,
+                    'is_read' => false
+                ]);
+            }
+
+            \Log::info('FCM Success:', [
+                'token' => $token,
+                'time_sent' => now()->toDateTimeString(),
+                'message_id' => $response,
+            ]);
+
+            return true;
+        } catch (\Exception $e) {
+            \Log::error('FCM Error:', [
+                'token' => $token,
+                'error' => $e->getMessage(),
+                'time' => now()->toDateTimeString(),
+            ]);
+            return false;
+        }
+    }
+
     // Memproses pesanan (mengubah status menjadi "Diproses")
     public function prosesPesanan(Request $request, $kodeTransaksi)
     {
@@ -228,6 +299,16 @@ class NotaPengusahaController extends Controller
             Pesanan::where('kode_transaksi', $kodeTransaksi)
                 ->where('id_toko', $toko->id)
                 ->update(['status' => 'Diproses']);
+
+            // Notifikasi
+            $user = $pesanan->user; // Pastikan relasi `user` ada di model Pesanan
+            if ($user && $user->fcm_token) {
+                $this->sendNotification(
+                    $user->fcm_token,
+                    'Pesanan Diproses',
+                    'Pesanan dengan kode transaksi ' . $kodeTransaksi . ' sedang diproses.'
+                );
+            }
 
             DB::commit();
 
@@ -276,6 +357,16 @@ class NotaPengusahaController extends Controller
             Pesanan::where('kode_transaksi', $kodeTransaksi)
                 ->where('id_toko', $toko->id)
                 ->update(['status' => 'Ditolak']);
+
+            // Notifikasi
+            $user = $pesanan->first()->user; // Ambil user dari pesanan pertama
+            if ($user && $user->fcm_token) {
+                $this->sendNotification(
+                    $user->fcm_token,
+                    'Pesanan Ditolak',
+                    'Pesanan dengan kode transaksi ' . $kodeTransaksi . ' telah ditolak.'
+                );
+            }
 
             DB::commit();
 

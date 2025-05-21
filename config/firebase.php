@@ -10,5 +10,5 @@ return [
     | Pastikan path ini sesuai dengan yang ada di file .env.
     |
     */
-    'credentials' => env('FIREBASE_CREDENTIALS', base_path('storage/firebase/cari-laundry-30f43-firebase-adminsdk-fbsvc-fd2d52f22f.json')),
+    'credentials' => env('FIREBASE_CREDENTIALS', base_path('storage/firebase/cari-laundry-30f43-firebase-adminsdk-fbsvc-7883ecf002.json')),
 ];

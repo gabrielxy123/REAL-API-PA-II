@@ -2,13 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Notifikasi;
 use App\Models\Pesanan;
 use App\Models\PesananKiloan;
 use App\Models\Produk;
 use App\Models\Toko;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Kreait\Firebase\Messaging\CloudMessage;
+use Kreait\Firebase\Messaging\Notification;
 
 class TransaksiController extends Controller
 {
@@ -94,6 +98,33 @@ class TransaksiController extends Controller
                 ], 400);
             }
 
+            // Kirim notifikasi ke pemilik toko
+            $toko = Toko::find($request->toko_id);
+
+            if ($toko && $toko->user) { // Menggunakan relasi `user`
+                $pemilik = $toko->user;
+
+                if ($pemilik->fcm_token) {
+                    $notificationTitle = 'Pesanan Baru Diterima';
+                    $notificationBody = 'Pesanan baru telah diterima untuk toko Anda dengan kode transaksi: ' . $kodeTransaksi;
+
+                    $data = [
+                        'event_type' => 'new_order',
+                        'transaction_code' => $kodeTransaksi,
+                        'store_id' => $toko->id,
+                        'store_name' => $toko->nama,
+                        'timestamp' => now()->timestamp
+                    ];
+
+                    $this->sendNotification(
+                        $pemilik->fcm_token,
+                        $notificationTitle,
+                        $notificationBody,
+                        $data
+                    );
+                }
+            }
+
             return response()->json([
                 'message' => 'Pesanan berhasil dibuat',
                 'kode_transaksi' => $kodeTransaksi,
@@ -104,6 +135,73 @@ class TransaksiController extends Controller
                 'message' => 'Gagal membuat pesanan',
                 'error' => $e->getMessage(),
             ], 500);
+        }
+    }
+
+    public function sendNotification($token, $title, $body, $data = [])
+    {
+        try {
+            $messaging = app('firebase.messaging');
+
+            // Configure high priority for Android
+            $androidConfig = [
+                'priority' => 'high',
+                'ttl' => '60s',
+                'notification' => [
+                    'channel_id' => 'high_importance_channel',
+                ]
+            ];
+
+            // Configure high priority for iOS (APNS)
+            $apnsConfig = [
+                'headers' => [
+                    'apns-priority' => '10',
+                    'apns-push-type' => 'alert'
+                ],
+                'payload' => [
+                    'aps' => [
+                        'content-available' => 1,
+                    ],
+                ],
+            ];
+
+            // Create the message with high priority configuration
+            $message = CloudMessage::withTarget('token', $token)
+                ->withNotification(Notification::create($title, $body))
+                ->withData($data)
+                ->withAndroidConfig($androidConfig)
+                ->withApnsConfig($apnsConfig);
+
+            $response = $messaging->send($message);
+
+            // Also save to database for history
+            // Find user by FCM token
+            $user = User::where('fcm_token', $token)->first();
+
+            if ($user) {
+                Notifikasi::create([
+                    'user_id' => $user->id,
+                    'title' => $title,
+                    'body' => $body,
+                    'data' => $data,
+                    'is_read' => false
+                ]);
+            }
+
+            \Log::info('FCM Success:', [
+                'token' => $token,
+                'time_sent' => now()->toDateTimeString(),
+                'message_id' => $response,
+            ]);
+
+            return true;
+        } catch (\Exception $e) {
+            \Log::error('FCM Error:', [
+                'token' => $token,
+                'error' => $e->getMessage(),
+                'time' => now()->toDateTimeString(),
+            ]);
+            return false;
         }
     }
 
