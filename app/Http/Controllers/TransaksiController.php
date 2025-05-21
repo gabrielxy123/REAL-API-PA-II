@@ -120,7 +120,8 @@ class TransaksiController extends Controller
                         $pemilik->fcm_token,
                         $notificationTitle,
                         $notificationBody,
-                        $data
+                        $data,
+                        $pemilik->id
                     );
                 }
             }
@@ -138,7 +139,7 @@ class TransaksiController extends Controller
         }
     }
 
-    public function sendNotification($token, $title, $body, $data = [])
+    public function sendNotification($token, $title, $body, $data = [], $userId = null)
     {
         try {
             $messaging = app('firebase.messaging');
@@ -180,7 +181,7 @@ class TransaksiController extends Controller
 
             if ($user) {
                 Notifikasi::create([
-                    'user_id' => $user->id,
+                    'user_id' => $userId,
                     'title' => $title,
                     'body' => $body,
                     'data' => $data,
