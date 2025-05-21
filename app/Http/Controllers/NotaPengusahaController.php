@@ -187,7 +187,7 @@ class NotaPengusahaController extends Controller
         ]);
     }
 
-    public function sendNotification($token, $title, $body, $data = [])
+    public function sendNotification($token, $title, $body, $data = [], $userId = null)
     {
         try {
             $messaging = app('firebase.messaging');
@@ -229,7 +229,7 @@ class NotaPengusahaController extends Controller
 
             if ($user) {
                 Notifikasi::create([
-                    'user_id' => $user->id,
+                    'user_id' => $userId,
                     'title' => $title,
                     'body' => $body,
                     'data' => $data,
@@ -306,7 +306,15 @@ class NotaPengusahaController extends Controller
                 $this->sendNotification(
                     $user->fcm_token,
                     'Pesanan Diproses',
-                    'Pesanan dengan kode transaksi ' . $kodeTransaksi . ' sedang diproses.'
+                    'Pesanan dengan kode transaksi ' . $kodeTransaksi . ' sedang diproses.',
+                    [ // Tambahkan data
+                        'event_type' => 'order_processed',
+                        'transaction_code' => $kodeTransaksi,
+                        'store_id' => $toko->id,
+                        'store_name' => $toko->nama,
+                        'timestamp' => now()->timestamp
+                    ],
+                    $user->id // Tambahkan user_id pembeli
                 );
             }
 
@@ -364,7 +372,15 @@ class NotaPengusahaController extends Controller
                 $this->sendNotification(
                     $user->fcm_token,
                     'Pesanan Ditolak',
-                    'Pesanan dengan kode transaksi ' . $kodeTransaksi . ' telah ditolak.'
+                    'Pesanan dengan kode transaksi ' . $kodeTransaksi . ' telah ditolak.',
+                    [ // Tambahkan data
+                        'event_type' => 'order_rejected',
+                        'transaction_code' => $kodeTransaksi,
+                        'store_id' => $toko->id,
+                        'store_name' => $toko->nama,
+                        'timestamp' => now()->timestamp
+                    ],
+                    $user->id // Tambahkan user_id pembeli
                 );
             }
 

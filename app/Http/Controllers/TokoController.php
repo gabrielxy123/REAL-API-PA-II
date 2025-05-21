@@ -77,7 +77,14 @@ class TokoController extends Controller
                 $this->sendNotification(
                     $fcmToken,
                     'Toko Disetujui',
-                    'Selamat! Toko Anda telah disetujui oleh admin.'
+                    'Selamat! Toko Anda telah disetujui oleh admin.',
+                    [ // Tambahkan data
+                        'event_type' => 'store_approved',
+                        'store_id' => $toko->id,
+                        'store_name' => $toko->nama,
+                        'timestamp' => now()->timestamp
+                    ],
+                    $user->id // Ta
                 );
             }
 
@@ -122,7 +129,14 @@ class TokoController extends Controller
                 $this->sendNotification(
                     $fcmToken,
                     'Toko Ditolak',
-                    'Maaf, Permintaan Pendaftaran Toko Anda ditolak oleh admin.'
+                    'Maaf, Permintaan Pendaftaran Toko Anda ditolak oleh admin.',
+                    [ // Tambahkan data
+                        'event_type' => 'store_rejected',
+                        'store_id' => $toko->id,
+                        'store_name' => $toko->nama,
+                        'timestamp' => now()->timestamp
+                    ],
+                    $user->id // Tambahkan user_id penerima
                 );
             }
 
@@ -184,7 +198,7 @@ class TokoController extends Controller
         ], 201);
     }
 
-    public function sendNotification($token, $title, $body, $data = [])
+    public function sendNotification($token, $title, $body, $data = [], $userId = null)
     {
         try {
             $messaging = app('firebase.messaging');
@@ -226,7 +240,7 @@ class TokoController extends Controller
 
             if ($user) {
                 Notifikasi::create([
-                    'user_id' => $user->id,
+                    'user_id' => $userId,
                     'title' => $title,
                     'body' => $body,
                     'data' => $data,
@@ -338,12 +352,13 @@ class TokoController extends Controller
                 ];
 
                 // Send to each admin token
-                foreach ($adminTokens as $token) {
+                foreach ($adminTokens as $admin) {
                     $this->sendNotification(
-                        $token,
+                        $admin->fcm_token,
                         $notificationTitle,
                         $notificationBody,
-                        $data
+                        $data,
+                        $admin->id // Kirim user_id admin untuk disimpan  di database
                     );
                 }
             }
