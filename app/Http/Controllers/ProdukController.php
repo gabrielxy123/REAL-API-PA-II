@@ -113,6 +113,90 @@ class ProdukController extends Controller
         ], 201);
     }
 
+    public function update(Request $request, $id)
+    {
+        // Memastikan user login
+        if (!Auth::check()) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
+        // Validasi input
+        $validated = $request->validate([
+            'nama' => 'sometimes|required|string|max:255',
+            'harga' => 'nullable|numeric',
+            'id_kategori' => 'sometimes|required|exists:kategoris,id'
+        ]);
+
+        $userId = Auth::id();
+
+        // Dapatkan toko milik pengguna
+        $toko = Toko::where('userID', $userId)->first();
+
+        // Jika pengguna tidak memiliki toko, kembalikan error
+        if (!$toko) {
+            return response()->json(['message' => 'Pengguna ini tidak memiliki toko.'], 404);
+        }
+
+        // Cari produk berdasarkan ID dan pastikan produk milik toko pengguna
+        $produk = Produk::where('id', $id)->where('id_toko', $toko->id)->first();
+
+        // Jika produk tidak ditemukan, kembalikan error
+        if (!$produk) {
+            return response()->json(['message' => 'Produk tidak ditemukan atau bukan milik toko ini.'], 404);
+        }
+
+        // Perbarui data produk
+        $produk->update($validated);
+
+        return response()->json([
+            'message' => 'Produk berhasil diperbarui',
+            'data' => [
+                'id' => $produk->id,
+                'nama' => $produk->nama,
+                'harga' => $produk->harga,
+                'id_user' => $produk->id_user,
+                'id_toko' => $produk->id_toko,
+                'id_kategori' => $produk->id_kategori,
+                'kategori' => $produk->kategori->kategori, // Asumsi ada relasi 'kategori' di model Produk
+                'updated_at' => $produk->updated_at,
+                'created_at' => $produk->created_at,
+            ],
+        ]);
+    }
+
+    public function destroy($id)
+    {
+        // Memastikan user login
+        if (!Auth::check()) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
+        $userId = Auth::id();
+
+        // Dapatkan toko milik pengguna
+        $toko = Toko::where('userID', $userId)->first();
+
+        // Jika pengguna tidak memiliki toko, kembalikan error
+        if (!$toko) {
+            return response()->json(['message' => 'Pengguna ini tidak memiliki toko.'], 404);
+        }
+
+        // Cari produk berdasarkan ID dan pastikan produk milik toko pengguna
+        $produk = Produk::where('id', $id)->where('id_toko', $toko->id)->first();
+
+        // Jika produk tidak ditemukan, kembalikan error
+        if (!$produk) {
+            return response()->json(['message' => 'Produk tidak ditemukan atau bukan milik toko ini.'], 404);
+        }
+
+        // Hapus produk
+        $produk->delete();
+
+        return response()->json(['message' => 'Produk berhasil dihapus'], 200);
+    }
+
+
+
     public function getProdukToOrder($toko_id)
     {
         try {
@@ -141,5 +225,4 @@ class ProdukController extends Controller
             ], 500);
         }
     }
-
 }

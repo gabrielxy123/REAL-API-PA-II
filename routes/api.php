@@ -75,6 +75,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post("/tambah-produk", [ProdukController::class, 'store']);
     Route::get("/kategoris", [KategoriController::class, 'index']);
     Route::get("/produks", [ProdukController::class, 'index']);
+    Route::put("/edit-produk/{id}", [ProdukController::class, 'update']);
+    Route::delete("/delete-produk/{id}", [ProdukController::class, 'destroy']);
+
 
     //Pemesanan
     Route::post("/pesanan/{id}", [PemesananController::class, 'store']);
@@ -102,6 +105,9 @@ Route::middleware('auth:sanctum')->group(function () {
     //Route layanan tambahana
     Route::post("/tambah-layanan", [LayananContrroller::class, 'store']);
     Route::get("/layanan", [LayananContrroller::class, 'index']);
+    Route::put("/edit-layanan/{id}", [LayananContrroller::class, 'update']);
+    Route::delete("/delete-layanan/{id}", [LayananContrroller::class, 'destroy']);
+
 
 
     //Notifikasi

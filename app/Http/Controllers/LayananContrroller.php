@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class LayananContrroller extends Controller
-{   
+{
 
     public function index()
     {
@@ -81,6 +81,87 @@ class LayananContrroller extends Controller
         ], 201);
     }
 
+    public function update(Request $request, $id)
+    {
+        // Memastikan user login
+        if (!Auth::check()) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
+        // Validasi input
+        $validated = $request->validate([
+            'nama' => 'sometimes|required|string|max:255',
+            'harga' => 'nullable|numeric',
+        ]);
+
+        $userId = Auth::id();
+
+        // Dapatkan toko milik pengguna
+        $toko = Toko::where('userID', $userId)->first();
+
+        // Jika pengguna tidak memiliki toko, kembalikan error
+        if (!$toko) {
+            return response()->json(['message' => 'Pengguna ini tidak memiliki toko.'], 404);
+        }
+
+        // Cari layanan berdasarkan ID dan pastikan layanan milik toko pengguna
+        $layanan = Layanan::where('id', $id)->where('id_toko', $toko->id)->first();
+
+        // Jika layanan tidak ditemukan, kembalikan error
+        if (!$layanan) {
+            return response()->json(['message' => 'Layanan tidak ditemukan atau bukan milik toko ini.'], 404);
+        }
+
+        // Perbarui data layanan
+        $layanan->update($validated);
+
+        return response()->json([
+            'message' => 'Layanan berhasil diperbarui',
+            'data' => [
+                'id' => $layanan->id,
+                'nama' => $layanan->nama,
+                'harga' => $layanan->harga,
+                'id_user' => $layanan->id_user,
+                'id_toko' => $layanan->id_toko,
+                'updated_at' => $layanan->updated_at,
+                'created_at' => $layanan->created_at,
+            ],
+        ]);
+    }
+
+
+    public function destroy($id)
+    {
+        // Memastikan user login
+        if (!Auth::check()) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
+        $userId = Auth::id();
+
+        // Dapatkan toko milik pengguna
+        $toko = Toko::where('userID', $userId)->first();
+
+        // Jika pengguna tidak memiliki toko, kembalikan error
+        if (!$toko) {
+            return response()->json(['message' => 'Pengguna ini tidak memiliki toko.'], 404);
+        }
+
+        // Cari layanan berdasarkan ID dan pastikan layanan milik toko pengguna
+        $layanan = Layanan::where('id', $id)->where('id_toko', $toko->id)->first();
+
+        // Jika layanan tidak ditemukan, kembalikan error
+        if (!$layanan) {
+            return response()->json(['message' => 'Layanan tidak ditemukan atau bukan milik toko ini.'], 404);
+        }
+
+        // Hapus layanan
+        $layanan->delete();
+
+        return response()->json(['message' => 'Layanan berhasil dihapus'], 200);
+    }
+
+
     public function getLayananToOrder($toko_id)
     {
         try {
@@ -138,5 +219,4 @@ class LayananContrroller extends Controller
             ], 500);
         }
     }
-
 }
