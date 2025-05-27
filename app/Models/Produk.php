@@ -12,6 +12,7 @@ class Produk extends Model
         'id_user',
         'id_toko',
         'id_kategori',
+        'harga',
     ];
 
     public function user() {

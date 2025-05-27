@@ -7,8 +7,6 @@ use Illuminate\Database\Eloquent\Model;
 
 class Pesanan extends Model
 {
-    use HasFactory;
-
     protected $table = 'pesanan';
 
     protected $fillable = [
@@ -23,7 +21,6 @@ class Pesanan extends Model
         'quantity',
         'subtotal',
         'kode_transaksi',
-        'layanan_tambahan',
         'id_pesanan_kiloan'
     ];
 
@@ -40,11 +37,6 @@ class Pesanan extends Model
     public function toko()
     {
         return $this->belongsTo(Toko::class, 'id_toko');
-    }
-
-    public function layanan()
-    {
-        return $this->belongsTo(Layanan::class, 'layanan_tambahan');
     }
 
     public function layananTambahan()

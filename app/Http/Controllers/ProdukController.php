@@ -64,52 +64,94 @@ class ProdukController extends Controller
         }
     }
 
+    // Tambahkan di controller ProdukController atau controller lain
+    public function cekHargaKiloan()
+    {
+        $userId = Auth::id();
+        $toko = Toko::where('userID', $userId)->first();
+
+        if (!$toko) {
+            return response()->json(['message' => 'Pengguna tidak punya toko.'], 404);
+        }
+
+        $produkKiloan = Produk::where('id_kategori', 2)->where('id_toko', $toko->id)->first();
+
+        if ($produkKiloan) {
+            return response()->json(['exists' => true, 'harga' => (float) $produkKiloan->harga]);
+        } else {
+            return response()->json(['exists' => false]);
+        }
+    }
+
+
 
     public function store(Request $request)
     {
-        //memastikan user login
         if (!Auth::check()) {
-            return response()->json(['message' => 'Unauthorized'], 401);
+            return response()->json(['message' => 'Unauthorized || Kamu tidak memiliki hak untuk menambahkan produk!'], 401);
         }
 
         $validated = $request->validate([
             'nama' => 'required|string|max:255',
-            'harga' => 'nullable|numeric',
+            'harga' => 'nullable|numeric|min:0',
             'id_kategori' => 'required|exists:kategoris,id'
         ]);
 
         $userId = Auth::id();
-
-        // Dapatkan toko milik pengguna
         $toko = Toko::where('userID', $userId)->first();
 
-        // Jika pengguna tidak memiliki toko, kembalikan error
         if (!$toko) {
             return response()->json(['message' => 'Pengguna ini tidak memiliki toko.'], 404);
         }
 
-        //Menyimpan produk
-        $produks = Produk::create([
+        // Logic khusus kategori kiloan
+        $kategoriKiloanID = 2;
+
+        if ((int) $validated['id_kategori'] === $kategoriKiloanID) {
+            $produkKiloan = Produk::where('id_kategori', $kategoriKiloanID)
+                ->where('id_toko', $toko->id)
+                ->whereNotNull('harga')
+                ->first();
+
+            if (!$produkKiloan) {
+                if (!isset($validated['harga']) || $validated['harga'] === null) {
+                    return response()->json(['message' => 'Harga wajib diisi untuk kategori kiloan (pertama kali).'], 422);
+                }
+                $hargaKiloan = $validated['harga'];
+            } else {
+                $hargaKiloan = $produkKiloan->harga;
+            }
+        } else {
+            // Bukan kategori kiloan, harga wajib diisi manual
+            if (!isset($validated['harga'])) {
+                return response()->json(['message' => 'Harga wajib diisi untuk kategori ini.'], 422);
+            }
+
+            $hargaKiloan = $validated['harga'];
+        }
+
+        // Simpan produk
+        $produk = Produk::create([
             'nama' => $validated['nama'],
-            'harga' => $validated['harga'] ?? null,
+            'harga' => $hargaKiloan,
             'id_user' => $userId,
             'id_toko' => $toko->id,
             'id_kategori' => $validated['id_kategori'],
         ]);
 
         return response()->json([
-            'message' => 'Produk berhasil dibuat',
+            'message' => 'Produk berhasil ditambahkan.',
             'data' => [
-                'id' => $produks->id,
-                'nama' => $produks->nama,
-                'harga' => $produks->harga,
-                'id_user' => $produks->id_user,
-                'id_toko' => $produks->id_toko,
-                'id_kategori' => $produks->id_kategori,
-                'kategori' => $produks->kategori->kategori, // Asumsi ada kolom 'kategori' di tabel kategoris
-                'updated_at' => $produks->updated_at,
-                'created_at' => $produks->created_at,
-            ],
+                'id' => $produk->id,
+                'nama' => $produk->nama,
+                'harga' => $produk->harga,
+                'id_user' => $produk->id_user,
+                'id_toko' => $produk->id_toko,
+                'id_kategori' => $produk->id_kategori,
+                'kategori' => $produk->kategori->kategori,
+                'updated_at' => $produk->updated_at,
+                'created_at' => $produk->created_at,
+            ]
         ], 201);
     }
 
@@ -117,7 +159,7 @@ class ProdukController extends Controller
     {
         // Memastikan user login
         if (!Auth::check()) {
-            return response()->json(['message' => 'Unauthorized'], 401);
+            return response()->json(['message' => 'Unauthorized || Kamu tidak memiliki hak untuk mengubah data ini !'], 401);
         }
 
         // Validasi input
@@ -163,6 +205,7 @@ class ProdukController extends Controller
             ],
         ]);
     }
+
 
     public function destroy($id)
     {

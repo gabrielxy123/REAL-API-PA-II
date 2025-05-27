@@ -32,12 +32,13 @@ class TransaksiController extends Controller
                 'pesanan_kiloan.details' => 'nullable|array',
                 'pesanan_kiloan.details.*.id_produk' => 'required|exists:produks,id',
                 'pesanan_kiloan.details.*.nama_barang' => 'required|string',
+                'layanan_tambahan' => 'nullable|array',
+                'layanan_tambahan.*' => 'exists:layanans,id',
             ]);
 
             $kodeTransaksi = 'TRX-' . strtoupper(uniqid());
             $pesananList = [];
 
-            // Buat pesanan kiloan jika ada
             $pesananKiloan = null;
 
             if (!empty($request->pesanan_kiloan)) {
@@ -51,7 +52,7 @@ class TransaksiController extends Controller
                     $produk = Produk::find($detail['id_produk']);
 
                     if (!$produk || $produk->id_kategori != 2) {
-                        continue; // Hanya izinkan produk kategori kiloan
+                        continue;
                     }
 
                     $pesananKiloan->details()->create([
@@ -62,7 +63,6 @@ class TransaksiController extends Controller
                 }
             }
 
-            // Buat pesanan per produk (satuan / kiloan)
             foreach ($request->items as $item) {
                 $produk = Produk::where('id', $item['produk_id'])
                     ->where('id_toko', $request->toko_id)
@@ -86,7 +86,14 @@ class TransaksiController extends Controller
                     'subtotal' => $subtotal,
                     'id_pesanan_kiloan' => $pesananKiloan ? $pesananKiloan->id : null,
                     'catatan' => $request->catatan ?? null,
+
                 ]);
+
+                if ($request->has('layanan_tambahan') && is_array($request->layanan_tambahan)) {
+                    $pesanan->layananTambahan()->sync($request->layanan_tambahan);
+                }
+
+                $pesanan->load('layananTambahan');
 
                 $pesananList[] = $pesanan;
             }
@@ -125,6 +132,8 @@ class TransaksiController extends Controller
                     );
                 }
             }
+
+            $pesanan->load('layananTambahan');
 
             return response()->json([
                 'message' => 'Pesanan berhasil dibuat',

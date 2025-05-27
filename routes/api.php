@@ -73,6 +73,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     //Route untuk CRUD Produk
     Route::post("/tambah-produk", [ProdukController::class, 'store']);
+    Route::get("/cek-harga-kiloan", [ProdukController::class, 'cekHargaKiloan']);
     Route::get("/kategoris", [KategoriController::class, 'index']);
     Route::get("/produks", [ProdukController::class, 'index']);
     Route::put("/edit-produk/{id}", [ProdukController::class, 'update']);
@@ -90,6 +91,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/transaksi/riwayat', [TransaksiController::class, 'riwayatTransaksi']);
 
     //Nota
+    
     Route::get("/nota", [NotaController::class, 'indexNota']);
     Route::get("/nota/{id}", [NotaController::class, 'detailNota']);
 
@@ -98,6 +100,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/pengusaha/transaksi/{kodeTransaksi}/proses', [NotaPengusahaController::class, 'prosesPesanan']);
     Route::post('/pengusaha/transaksi/{kodeTransaksi}/update-kiloan', [NotaPengusahaController::class, 'updatePesananKiloan']);
     Route::post('/pengusaha/transaksi/{kodeTransaksi}/tolak', [NotaPengusahaController::class, 'tolakPesanan']);
+    Route::post('/pengusaha/transaksi/{kodeTransaksi}/selesai', [NotaPengusahaController::class, 'selesaiPesanan']);
 
 
     

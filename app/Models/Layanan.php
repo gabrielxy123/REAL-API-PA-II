@@ -25,14 +25,6 @@ class Layanan extends Model
 
     public function pesanans()
     {
-        return $this->hasMany(Pesanan::class, 'layanan_tambahan');
-    }
-    public function pesanan()
-    {
         return $this->belongsToMany(Pesanan::class, 'pesanan_layanan_tambahan', 'id_layanan', 'id_pesanan');
-    }
-    public function pesananKiloan()
-    {
-        return $this->belongsTo(PesananKiloan::class, 'id_pesanan_kiloan');
     }
 }

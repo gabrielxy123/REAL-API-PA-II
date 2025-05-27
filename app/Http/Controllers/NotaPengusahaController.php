@@ -490,4 +490,52 @@ class NotaPengusahaController extends Controller
             ], 500);
         }
     }
+
+    // Memproses pesanan (mengubah status menjadi "Diproses")
+    public function selesaiPesanan(Request $request, $kodeTransaksi)
+    {
+        $userId = Auth::id();
+
+        $toko = Toko::where('userId', $userId)->first();
+
+        if (!$toko) {
+            return response()->json([
+                'message' => 'Toko tidak ditemukan untuk user ini',
+                'success' => false
+            ], 404);
+        }
+
+        // Cek apakah pesanan ada dan milik toko ini
+        $pesanan = Pesanan::where('kode_transaksi', $kodeTransaksi)
+            ->where('id_toko', $toko->id)
+            ->first();
+
+        if (!$pesanan) {
+            return response()->json([
+                'message' => 'Pesanan tidak ditemukan atau bukan milik toko Anda',
+                'success' => false
+            ], 404);
+        }
+
+        // Update status semua pesanan dengan kode transaksi yang sama
+        DB::beginTransaction();
+        try {
+            Pesanan::where('kode_transaksi', $kodeTransaksi)
+                ->where('id_toko', $toko->id)
+                ->update(['status' => 'Selesai']);
+
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Pesanan telah selesai!',
+                'success' => true
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'message' => 'Gagal menyelesaikan pesanan: ' . $e->getMessage(),
+                'success' => false
+            ], 500);
+        }
+    }
 }
