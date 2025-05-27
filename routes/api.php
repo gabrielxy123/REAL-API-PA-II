@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PersonController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AkunUserController;
+use App\Http\Controllers\Api\ReviewController;
+use App\Http\Controllers\BusinessReviewController;
 use App\Http\Controllers\FcmTokenController;
 use App\Http\Controllers\KategoriController;
 use App\Http\Controllers\LayananContrroller;
@@ -29,6 +31,7 @@ Route::get("/order-kategoris", [KategoriController::class, 'indexToOrder']);
 Route::get("/order-produks/{id_toko}", [ProdukController::class, 'getProdukToOrder']);
 Route::get("/layanan-produks/{id_toko}", [LayananContrroller::class, 'getLayananToOrder']);
 Route::get("/layanan-user/{id_toko}", [LayananContrroller::class, 'getLayananToToko']);
+Route::get("/toko/{tokoId}/ulasan", [ReviewController::class, 'getTokoReviews']);
 
 
 
@@ -83,9 +86,6 @@ Route::middleware('auth:sanctum')->group(function () {
     //Pemesanan
     Route::post("/pesanan/{id}", [PemesananController::class, 'store']);
 
-    //Notifikasi
-    
-
     //Tes Transaksi
     Route::post("/transaksi", [TransaksiController::class, 'store']);
     Route::get('/transaksi/riwayat', [TransaksiController::class, 'riwayatTransaksi']);
@@ -102,8 +102,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/pengusaha/transaksi/{kodeTransaksi}/tolak', [NotaPengusahaController::class, 'tolakPesanan']);
     Route::post('/pengusaha/transaksi/{kodeTransaksi}/selesai', [NotaPengusahaController::class, 'selesaiPesanan']);
 
-
-    
+    //Ulasan user (memerlukan autentikasi)
+    Route::post("/ulasan", [ReviewController::class, 'store']);
+    Route::get("/ulasan/saya", [ReviewController::class, 'getUserReviews']);
+    Route::get("/ulasan/transaksi/{kodeTransaksi}", [ReviewController::class, 'getTransactionReview']);
+    Route::get("/ulasan/transaksi/{kodeTransaksi}/cek-bisa-ulas", [ReviewController::class, 'canReview']);
 
     //Route layanan tambahana
     Route::post("/tambah-layanan", [LayananContrroller::class, 'store']);
@@ -119,6 +122,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
     Route::get('/notifications/unread-count', [NotificationController::class, 'getUnreadCount']);
     Route::delete('/notifications/{id}', [NotificationController::class, 'delete']);
+
+    //Ulasan pemilik toko
+    Route::get('/pengusaha/toko-saya/ulasan/statistik', [BusinessReviewController::class, 'getMyStoreReviewStats']);
+    Route::get('/pengusaha/toko-saya/ulasan', [BusinessReviewController::class, 'getMyStoreReviews']);
 });
 
 // Test routes for Postman

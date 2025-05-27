@@ -333,6 +333,84 @@ class NotaPengusahaController extends Controller
         }
     }
 
+    public function selesaiPesanan(Request $request, $kodeTransaksi)
+    {
+        $userId = Auth::id();
+
+        $toko = Toko::where('userId', $userId)->first();
+
+        if (!$toko) {
+            return response()->json([
+                'message' => 'Toko tidak ditemukan untuk user ini',
+                'success' => false
+            ], 404);
+        }
+
+        // Cek apakah pesanan ada dan milik toko ini
+        $pesanan = Pesanan::where('kode_transaksi', $kodeTransaksi)
+            ->where('id_toko', $toko->id)
+            ->first();
+
+        if (!$pesanan) {
+            return response()->json([
+                'message' => 'Pesanan tidak ditemukan atau bukan milik toko Anda',
+                'success' => false
+            ], 404);
+        }
+
+        // Cek apakah pesanan kiloan sudah diisi jika ada
+        if ($pesanan->id_pesanan_kiloan) {
+            $pesananKiloan = PesananKiloan::find($pesanan->id_pesanan_kiloan);
+
+            if ($pesananKiloan && ($pesananKiloan->jumlah_kiloan === null || $pesananKiloan->harga_kiloan === null)) {
+                return response()->json([
+                    'message' => 'Pesanan kiloan harus diisi jumlah dan harga per kilo sebelum diproses',
+                    'success' => false,
+                    'requires_kiloan_data' => true
+                ], 422);
+            }
+        }
+
+        // Update status semua pesanan dengan kode transaksi yang sama
+        DB::beginTransaction();
+        try {
+            Pesanan::where('kode_transaksi', $kodeTransaksi)
+                ->where('id_toko', $toko->id)
+                ->update(['status' => 'Selesai']);
+
+            // Notifikasi
+            $user = $pesanan->user; // Pastikan relasi `user` ada di model Pesanan
+            if ($user && $user->fcm_token) {
+                $this->sendNotification(
+                    $user->fcm_token,
+                    'Pesanan Selesai',
+                    'Pesanan dengan kode transaksi ' . $kodeTransaksi . ' sudah selesai dikerjakan. Terimakasih telah menggunakan layanan kami',
+                    [ // Tambahkan data
+                        'event_type' => 'order_done', 
+                        'transaction_code' => $kodeTransaksi,
+                        'store_id' => $toko->id,
+                        'store_name' => $toko->nama,
+                        'timestamp' => now()->timestamp
+                    ],
+                    $user->id // Tambahkan user_id pembeli
+                );
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Pesanan Selesai',
+                'success' => true
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'message' => 'Gagal memproses pesanan: ' . $e->getMessage(),
+                'success' => false
+            ], 500);
+        }
+    }
+
     // Menolak pesanan (mengubah status menjadi "Ditolak")
     public function tolakPesanan($kodeTransaksi)
     {
