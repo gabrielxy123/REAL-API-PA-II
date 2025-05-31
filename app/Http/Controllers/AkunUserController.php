@@ -274,6 +274,7 @@ class AkunUserController extends Controller
                     'jalan' => $toko->jalan,
                     'kecamatan' => $toko->kecamatan,
                     'kabupaten' => $toko->kabupaten,
+                    'provinsi' => $toko->provinsi,
                     'waktuBuka' => $toko->waktuBuka,
                     'waktuTutup' => $toko->waktuTutup,
                     'noTelp' => $toko->noTelp,

@@ -399,26 +399,6 @@ class TokoController extends Controller
         ], 200);
     }
 
-    public function update(Request $request, Toko $toko)
-    {
-        $validated = $request->validate([
-            'nama' => 'sometimes|required',
-            'no_telp' => 'sometimes|required',
-            'email' => 'sometimes|required|email|unique:tokos,email,' . $toko->id,
-            'deskripsi' => 'nullable',
-            'jalan' => 'sometimes|required',
-            'kecamatan' => 'sometimes|required',
-            'kabupaten' => 'sometimes|required',
-            'provinsi' => 'sometimes|required',
-            'waktu_buka' => 'sometimes|required',
-            'waktu_tutup' => 'sometimes|required',
-        ]);
-        $toko->update($validated);
-        return response()->json([
-            'message' => 'Toko berhasil diperbarui',
-            'data' => $toko
-        ], 200);
-    }
 
     public function destroy(Toko $toko)
     {
@@ -427,5 +407,80 @@ class TokoController extends Controller
             'message' => 'Toko berhasil dihapus',
             'data' => null
         ], 200);
+    }
+
+    //Update detail informasi toko
+    public function update(Request $request)
+    {
+        try {
+            // Ambil user yang sedang login
+            $userId = Auth::id();
+
+            // Cari toko milik user
+            $toko = Toko::where('userID', $userId)->first();
+
+            if (!$toko) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Toko tidak ditemukan'
+                ], 404);
+            }
+
+            // Validasi input
+            $validated = $request->validate([
+                'nama' => 'sometimes|required|string|max:255',
+                'noTelp' => 'sometimes|required|string|regex:/^[0-9]{10,15}$/',
+                'email' => 'sometimes|required|email|max:255|unique:tokos,email,' . $toko->id,
+                'deskripsi' => 'nullable|string|max:500',
+                'jalan' => 'sometimes|required|string|max:255',
+                'kecamatan' => 'sometimes|required|string|max:255',
+                'kabupaten' => 'sometimes|required|string|max:255',
+                'provinsi' => 'sometimes|required|string|max:255',
+                'waktuBuka' => 'sometimes|required|date_format:H:i:s',
+                'waktuTutup' => 'sometimes|required|date_format:H:i:s|after:waktuBuka',
+            ]);
+
+            // Simpan data lama untuk log
+            $oldData = $toko->toArray();
+
+            // Update data toko
+            $toko->update($validated);
+
+            // Refresh data dari database
+            $toko->refresh();
+
+            // Log perubahan
+            Log::info('Store details updated', [
+                'store_id' => $toko->id,
+                'user_id' => $userId,
+                'old_data' => $oldData,
+                'new_data' => $toko->toArray(),
+                'updated_at' => now()
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Detail toko berhasil diperbarui',
+                'data' => $toko
+            ], 200);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi gagal',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('Error updating store details: ' . $e->getMessage(), [
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat memperbarui detail toko',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 }

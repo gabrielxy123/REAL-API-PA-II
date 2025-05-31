@@ -53,7 +53,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Route untuk mendaftar toko 
     Route::post("/store", [TokoController::class, 'store']);
-    Route::post("/update-store", [TokoController::class, 'update']);
+    Route::put("/toko/update", [TokoController::class, 'update']);
 
     // ADMIN //
 
