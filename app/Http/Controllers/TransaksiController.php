@@ -41,11 +41,21 @@ class TransaksiController extends Controller
 
             $pesananKiloan = null;
 
+            // Ambil produk kiloan pertama dari toko yang bersangkutan
+            $produkKiloan = Produk::where('id_kategori', 2)
+                ->where('id_toko', $request->toko_id)
+                ->first();
+
+            if (!$produkKiloan) {
+                return response()->json([
+                    'message' => 'Produk kiloan tidak ditemukan di toko ini.'
+                ], 400);
+            }
+
             if (!empty($request->pesanan_kiloan)) {
                 $pesananKiloan = PesananKiloan::create([
-
                     'jumlah_kiloan' => $request->pesanan_kiloan['jumlah_kiloan'],
-                    'harga_kiloan' => $request->pesanan_kiloan['harga_kiloan'],
+                    'harga_kiloan' => $produkKiloan->harga,
                 ]);
 
                 foreach ($request->pesanan_kiloan['details'] as $detail) {
