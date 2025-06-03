@@ -154,6 +154,7 @@ class NotaPengusahaController extends Controller
                 'kode_transaksi' => $kodeTransaksi,
                 'waktu' => $first->created_at->format('d-m-Y H:i'),
                 'status' => $first->status,
+                'catatan'=>$first->catatan,
                 'id_pesanan_kiloan' => $first->id_pesanan_kiloan,
                 'toko' => [
                     'nama' => $first->toko->nama ?? '-',
