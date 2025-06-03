@@ -33,11 +33,16 @@ class NotaController extends Controller
         $result = $groupedPesanan->map(function ($group) use ($userId) {
             $items = Pesanan::where('kode_transaksi', $group->kode_transaksi)
                 ->where('id_user', $userId)
-                ->with(['layananTambahan', 'pesananKiloan'])
+                ->with(['layananTambahan', 'pesananKiloan', 'produk']) // Tambahkan relasi produk
                 ->get();
 
-            // Total produk
-            $totalProduk = $items->sum('subtotal');
+            // Filter hanya item dengan id_kategori = 1
+            $filteredItems = $items->filter(function ($item) {
+                return $item->produk->id_kategori == 1; // Cek kategori produk
+            });
+
+            // Total produk (hanya dari item dengan id_kategori = 1)
+            $totalProduk = $filteredItems->sum('subtotal');
 
             // Total layanan tambahan
             $layananTambahan = $items->first()?->layananTambahan ?? collect();
@@ -60,7 +65,7 @@ class NotaController extends Controller
                 'kode_transaksi' => $group->kode_transaksi,
                 'nama_toko' => $group->toko->nama ?? 'Tidak diketahui',
                 'tanggal' => \Carbon\Carbon::parse($group->tanggal)->format('d-m-Y H:i'),
-                'jumlah_item' => $items->sum('quantity'),
+                'jumlah_item' => $filteredItems->sum('quantity'),
                 'total_harga' => $grandTotal,
                 'status' => $group->status ?? 'Menunggu'
             ];
@@ -89,8 +94,13 @@ class NotaController extends Controller
             ], 404);
         }
 
+        // Filter hanya item dengan id_kategori = 1
+        $filteredPesananList = $pesananList->filter(function ($pesanan) {
+            return $pesanan->produk->id_kategori == 1; // Cek kategori produk
+        });
+
         $first = $pesananList->first();
-        $totalProduk = $pesananList->sum('subtotal');
+        $totalProduk = $filteredPesananList->sum('subtotal'); // Gunakan koleksi hasil filter
         $layananTambahan = $first->layananTambahan;
         $totalLayanan = $layananTambahan->sum('harga');
         $grandTotal = $totalProduk + $totalLayanan;
@@ -132,9 +142,9 @@ class NotaController extends Controller
                     'nama' => $first->toko->nama ?? '-',
                     'kontak' => $first->toko->noTelp ?? '-',
                 ],
-                'items' => $pesananList->map(function ($item) {
+                'items' => $filteredPesananList->map(function ($item) {
                     return [
-                        'produk' => $item->nama_produk,
+                        'produk' => $item->nama_produk ?? 'Tidak diketahui',
                         'harga' => $item->harga,
                         'quantity' => $item->quantity,
                         'subtotal' => $item->subtotal,

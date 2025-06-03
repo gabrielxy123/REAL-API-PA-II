@@ -47,11 +47,16 @@ class NotaPengusahaController extends Controller
         $result = $groupedPesanan->map(function ($group) {
             $items = Pesanan::where('kode_transaksi', $group->kode_transaksi)
                 ->where('id_user', $group->id_user)
-                ->with(['layananTambahan', 'pesananKiloan']) // tambahkan relasi
+                ->with(['layananTambahan', 'pesananKiloan', 'produk'])
                 ->get();
 
-            // Total produk
-            $totalProduk = $items->sum('subtotal');
+            // Filter hanya item dengan id_kategori = 1
+            $filteredItems = $items->filter(function ($item) {
+                return $item->produk->id_kategori == 1; // Cek kategori produk
+            });
+
+            // Total produk (hanya dari item dengan id_kategori = 1)
+            $totalProduk = $filteredItems->sum('subtotal');
 
             // Total layanan tambahan (dari satu pesanan saja karena shared per transaksi)
             $layananTambahan = $items->first()?->layananTambahan ?? collect();
@@ -73,7 +78,7 @@ class NotaPengusahaController extends Controller
                 'kode_transaksi' => $group->kode_transaksi,
                 'nama_pelanggan' => $group->user->name ?? 'Tidak diketahui',
                 'tanggal' => \Carbon\Carbon::parse($group->tanggal)->format('d-m-Y H:i'),
-                'jumlah_item' => $items->sum('quantity'),
+                'jumlah_item' => $filteredItems->sum('quantity'),
                 'total_harga' => $grandTotal,
                 'status' => $group->status ?? 'Menunggu'
             ];
@@ -84,6 +89,7 @@ class NotaPengusahaController extends Controller
             'data' => $result
         ]);
     }
+
 
 
     // Menampilkan detail transaksi berdasarkan kode_transaksi untuk toko milik user
@@ -112,13 +118,17 @@ class NotaPengusahaController extends Controller
             ], 404);
         }
 
+        // Filter hanya item dengan id_kategori = 1
+        $filteredItems = $pesananList->filter(function ($item) {
+            return $item->produk->id_kategori == 1;
+        });
+
         $first = $pesananList->first();
-        $totalProduk = $pesananList->sum('subtotal');
+        $totalProduk = $filteredItems->sum('subtotal');
         $layananTambahan = $first->layananTambahan;
         $totalLayanan = $layananTambahan->sum('harga');
         $grandTotal = $totalProduk + $totalLayanan;
 
-        // Cek apakah ini pesanan kiloan
         $pesananKiloanData = null;
         $totalKiloan = 0;
 
@@ -126,7 +136,6 @@ class NotaPengusahaController extends Controller
             $pesananKiloan = PesananKiloan::with('details')->find($first->id_pesanan_kiloan);
 
             if ($pesananKiloan) {
-                // Calculate total kiloan if both values are set
                 if ($pesananKiloan->jumlah_kiloan !== null && $pesananKiloan->harga_kiloan !== null) {
                     $totalKiloan = $pesananKiloan->jumlah_kiloan * $pesananKiloan->harga_kiloan;
                     $grandTotal += $totalKiloan;
@@ -154,7 +163,7 @@ class NotaPengusahaController extends Controller
                 'kode_transaksi' => $kodeTransaksi,
                 'waktu' => $first->created_at->format('d-m-Y H:i'),
                 'status' => $first->status,
-                'catatan'=>$first->catatan,
+                'catatan' => $first->catatan,
                 'id_pesanan_kiloan' => $first->id_pesanan_kiloan,
                 'toko' => [
                     'nama' => $first->toko->nama ?? '-',
@@ -165,7 +174,7 @@ class NotaPengusahaController extends Controller
                     'kontak' => $first->user->phone ?? '-',
                     'alamat' => $first->user->address ?? '-',
                 ],
-                'items' => $pesananList->map(function ($item) {
+                'items' => $filteredItems->map(function ($item) {
                     return [
                         'produk' => $item->nama_produk,
                         'harga' => $item->harga,
@@ -187,6 +196,7 @@ class NotaPengusahaController extends Controller
             ]
         ]);
     }
+
 
     public function sendNotification($token, $title, $body, $data = [], $userId = null)
     {
@@ -387,7 +397,7 @@ class NotaPengusahaController extends Controller
                     'Pesanan Selesai',
                     'Pesanan dengan kode transaksi ' . $kodeTransaksi . ' sudah selesai dikerjakan. Terimakasih telah menggunakan layanan kami',
                     [ // Tambahkan data
-                        'event_type' => 'order_done', 
+                        'event_type' => 'order_done',
                         'transaction_code' => $kodeTransaksi,
                         'store_id' => $toko->id,
                         'store_name' => $toko->nama,
